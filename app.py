@@ -13,8 +13,8 @@ MANUFACTURER_OPTIONS = [
 ]
 
 CATEGORY_OPTIONS = [
-    'Jeep' 'Hatchback' 'Sedan' 'Microbus' 'Goods wagon' 'Universal' 'Coupe'
- 'Minivan' 'Cabriolet' 'Limousine' 'Pickup'
+    'Jeep', 'Hatchback', 'Sedan', 'Microbus', 'Goods wagon', 'Universal', 'Coupe',
+ 'Minivan', 'Cabriolet', 'Limousine', 'Pickup'
 ]
 
 DRIVE_WHEELS_OPTIONS = [
@@ -161,7 +161,7 @@ def run_car_price_app():
             user_input[col] = st.number_input(col, min_value=0, value=1, step=1)
 
     # Categorical inputs
-     for col in cat_cols:
+    for col in cat_cols:
         if col in ["Manufacturer", "Model", "Category", "is_premium"]:
             continue
         if col in ["Right_hand_drive", "Leather interior"]:
