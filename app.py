@@ -13,7 +13,8 @@ MANUFACTURER_OPTIONS = [
 ]
 
 CATEGORY_OPTIONS = [
-    'Jeep', 'Hatchback', 'Sedan', 'Rare', 'Universal', 'Coupe', 'Minivan'
+    'Jeep' 'Hatchback' 'Sedan' 'Microbus' 'Goods wagon' 'Universal' 'Coupe'
+ 'Minivan' 'Cabriolet' 'Limousine' 'Pickup'
 ]
 
 DRIVE_WHEELS_OPTIONS = [
@@ -99,21 +100,32 @@ Gunakan file tersebut sebagai referensi agar input Model bisa tepat dan prediksi
 3. Klik tombol **Predict Price** untuk melihat estimasi harga mobil.
 """
 
+
 def run_car_price_app():
     st.subheader("Masukkan Detail Mobil")
     user_input = {}
 
+    # ===== Dropdown Berjenjang =====
     # Manufacturer
-    chosen_manufacturer = st.selectbox("Manufacturer", MANUFACTURER_OPTIONS)
+    manufacturers = sorted(df_all['Manufacturer'].unique())
+    chosen_manufacturer = st.selectbox("Manufacturer", manufacturers)
     user_input["Manufacturer"] = chosen_manufacturer
 
-    # Model
-    model_options = list(model_price_mean.index)
-    selected_model = st.selectbox("Model", model_options)
-    user_input["Model_encoded"] = model_price_mean.get(selected_model, 0)
+    # Category terfilter berdasarkan Manufacturer
+    categories = sorted(df_all[df_all['Manufacturer'] == chosen_manufacturer]['Category'].unique())
+    chosen_category = st.selectbox("Category", categories)
+    user_input["Category"] = chosen_category
+
+    # Model terfilter berdasarkan Manufacturer & Category
+    models = sorted(df_all[(df_all['Manufacturer'] == chosen_manufacturer) &
+                           (df_all['Category'] == chosen_category)]['Model'].unique())
+    selected_model = st.selectbox("Model", models)
     user_input["Model"] = selected_model
 
-    # Premium detection
+    # Ambil encoding model
+    user_input["Model_encoded"] = model_price_mean.get(selected_model, 0)
+
+    # ===== Premium Detection =====
     is_premium_manufacturer = int(chosen_manufacturer in PREMIUM_BRANDS)
     is_premium_model = premium_map.get(selected_model, None)
 
@@ -127,7 +139,7 @@ def run_car_price_app():
     else:
         st.info("ℹ️ Mobil non-premium.")
 
-    # Numeric inputs
+    # ===== Numeric inputs =====
     for col in num_cols:
         if col in ["Model_encoded", "is_premium"]:
             continue
@@ -138,7 +150,7 @@ def run_car_price_app():
         elif col == "Doors":
             user_input[col] = st.number_input(col, min_value=2, max_value=5, value=4, step=1)
         elif col == "Airbags":
-            user_input[col] = st.number_input(col, min_value=1, value=2, step=1)
+            user_input[col] = st.selectbox(col, list(range(0, 21)), index=2)  # 0–16 pilihan
         elif col == "volume_per_cylinder":
             user_input[col] = st.number_input(col, min_value=0.5, value=2.0, step=0.1, format="%.1f")
         elif col == "car_age":
@@ -149,13 +161,11 @@ def run_car_price_app():
             user_input[col] = st.number_input(col, min_value=0, value=1, step=1)
 
     # Categorical inputs
-    for col in cat_cols:
-        if col in ["Manufacturer", "Model", "is_premium"]:
+     for col in cat_cols:
+        if col in ["Manufacturer", "Model", "Category", "is_premium"]:
             continue
         if col in ["Right_hand_drive", "Leather interior"]:
             user_input[col] = st.selectbox(col, ["Yes", "No"])
-        elif col == "Category":
-            user_input[col] = st.selectbox(col, CATEGORY_OPTIONS)
         elif col == "Drive wheels":
             user_input[col] = st.selectbox(col, DRIVE_WHEELS_OPTIONS)
         elif col == "fuel_gear":
@@ -175,11 +185,11 @@ def run_car_price_app():
         if col in user_input and col not in ["Model_encoded", "is_premium"]:
             user_input[col] = float(user_input[col])
 
-    # Prepare DataFrame
+    # ===== Prepare DataFrame =====
     input_df = pd.DataFrame([user_input])
     input_df = input_df.reindex(columns=expected_cols)
 
-    # Prediction
+    # ===== Prediction =====
     if st.button("🔮 Predict Price"):
         try:
             log_prediction = model.predict(input_df)[0]
