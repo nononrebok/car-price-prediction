@@ -36,6 +36,9 @@ PREMIUM_BRANDS = ['BMW', 'MERCEDES-BENZ', 'AUDI', 'LEXUS']
 # ===== Load Model & Mapping =====
 model = joblib.load('best_model_LightGBM.pkl')
 
+with open("manufacturer_category_model-2.json", "r") as f:
+    manu_cat_model_map = json.load(f)
+
 with open("model_price_mean.json", "r") as f:
     model_price_mean = pd.Series(json.load(f))
 
@@ -107,24 +110,23 @@ def run_car_price_app():
 
     # ===== Dropdown Berjenjang =====
     # Manufacturer
-    manufacturers = sorted(df_all['Manufacturer'].unique())
+    manufacturers = sorted(list(manu_cat_model_map.keys()))
     chosen_manufacturer = st.selectbox("Manufacturer", manufacturers)
     user_input["Manufacturer"] = chosen_manufacturer
-
-    # Category terfilter berdasarkan Manufacturer
-    categories = sorted(df_all[df_all['Manufacturer'] == chosen_manufacturer]['Category'].unique())
+    
+    # Category terfilter dari JSON
+    categories = sorted(list(manu_cat_model_map[chosen_manufacturer].keys()))
     chosen_category = st.selectbox("Category", categories)
     user_input["Category"] = chosen_category
-
-    # Model terfilter berdasarkan Manufacturer & Category
-    models = sorted(df_all[(df_all['Manufacturer'] == chosen_manufacturer) &
-                           (df_all['Category'] == chosen_category)]['Model'].unique())
+    
+    # Model terfilter dari JSON
+    models = sorted(manu_cat_model_map[chosen_manufacturer][chosen_category])
     selected_model = st.selectbox("Model", models)
     user_input["Model"] = selected_model
-
+    
     # Ambil encoding model
     user_input["Model_encoded"] = model_price_mean.get(selected_model, 0)
-
+                                                                                                        
     # ===== Premium Detection =====
     is_premium_manufacturer = int(chosen_manufacturer in PREMIUM_BRANDS)
     is_premium_model = premium_map.get(selected_model, None)
